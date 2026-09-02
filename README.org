@@ -1,0 +1,86 @@
+#+title: Mise Blueprints
+
+This repository contains versioned, AI-friendly project blueprints. Each
+top-level directory is a blueprint identifier, and each child directory is an
+immutable compatibility version.
+
+#+begin_example
+mise-blueprints/
+├── uv-python/
+│   └── v0.0.1/
+├── react/
+│   └── v0.0.1/
+└── emacs-lisp/
+    └── v0.0.1/
+#+end_example
+
+Each version is a self-contained Copier template with:
+
+- =copier.yml=: typed template questions and rendering configuration.
+- =template/=: files and directories rendered into the destination.
+- =answers.yml.example=: complete non-interactive example answers.
+
+* Requirements
+
+Install the repository tools through mise:
+
+#+begin_src shell
+mise install
+#+end_src
+
+* Render a blueprint
+
+Render the Python example:
+
+#+begin_src shell
+copier copy \
+  --data-file uv-python/v0.0.1/answers.yml.example \
+  uv-python/v0.0.1 \
+  /tmp/example-python
+#+end_src
+
+Render the React example:
+
+#+begin_src shell
+copier copy \
+  --data-file react/v0.0.1/answers.yml.example \
+  react/v0.0.1 \
+  /tmp/example-react
+#+end_src
+
+Render the Emacs Lisp example:
+
+#+begin_src shell
+copier copy \
+  --data-file emacs-lisp/v0.0.1/answers.yml.example \
+  emacs-lisp/v0.0.1 \
+  /tmp/example-emacs-lisp
+#+end_src
+
+Omit =--data-file= to answer the template questionnaire interactively.
+
+* Verify all examples
+
+The check task renders every example into temporary directories and removes
+them afterward:
+
+#+begin_src shell
+mise check
+#+end_src
+
+* Versioning policy
+
+A blueprint version is treated as immutable after release. Compatible template
+improvements should be added under a new version directory, preserving older
+versions for existing automation:
+
+#+begin_example
+uv-python/
+├── v0.0.1/
+├── v0.1.0/
+└── v1.0.0/
+#+end_example
+
+Agents should select an explicit identifier and version, produce a complete
+answers file, and invoke Copier. This keeps requirement interpretation
+flexible while file generation remains repeatable.

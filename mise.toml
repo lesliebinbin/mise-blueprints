@@ -1,0 +1,20 @@
+[tools]
+"pipx:copier" = "9.18.1"
+
+[tasks.check]
+description = "Render all blueprint examples"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+output="$(mktemp -d)"
+trap 'rm -rf "$output"' EXIT
+
+for blueprint in uv-python react emacs-lisp; do
+  copier copy \
+    --defaults \
+    --data-file "$blueprint/v0.0.1/answers.yml.example" \
+    "$blueprint/v0.0.1" \
+    "$output/$blueprint"
+done
+"""

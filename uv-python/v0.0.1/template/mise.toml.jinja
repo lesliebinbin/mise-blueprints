@@ -1,0 +1,21 @@
+[tools]
+python = "{{ python_version }}"
+uv = "latest"
+
+[env]
+UV_PYTHON = { value = "{{ '{{ tools.python.path }}' }}", tools = true }
+
+[settings]
+python.uv_venv_auto = "create|source"
+
+[tasks.setup]
+description = "Synchronize locked dependencies"
+run = "uv sync"
+
+[tasks.test]
+description = "Run the test suite"
+run = "uv run pytest"
+
+[tasks.check]
+description = "Run project checks"
+depends = ["test"]

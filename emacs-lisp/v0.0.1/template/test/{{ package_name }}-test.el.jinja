@@ -1,0 +1,9 @@
+;;; {{ package_name }}-test.el --- Tests for {{ package_name }} -*- lexical-binding: t; -*-
+
+(require 'ert)
+(require '{{ package_name }})
+
+(ert-deftest {{ package_name }}-defines-greeting-command ()
+  (should (commandp '{{ package_name }}-hello)))
+
+;;; {{ package_name }}-test.el ends here

@@ -1,0 +1,22 @@
+;;; {{ package_name }}.el --- {{ description }} -*- lexical-binding: t; -*-
+
+;; Author: {{ author_name }} <{{ author_email }}>
+;; Version: 0.1.0
+;; Package-Requires: ((emacs "{{ emacs_version }}"))
+;; Keywords: tools
+
+;;; Commentary:
+
+;; {{ description }}
+
+;;; Code:
+
+;;;###autoload
+(defun {{ package_name }}-hello ()
+  "Display a greeting from {{ package_name }}."
+  (interactive)
+  (message "Hello from {{ package_name }}"))
+
+(provide '{{ package_name }})
+
+;;; {{ package_name }}.el ends here
