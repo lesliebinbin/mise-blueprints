@@ -5,10 +5,10 @@ description: Select and render a versioned mise-managed project blueprint with C
 
 # Generate a project from a mise blueprint
 
-1. Read `README.org` and list the available blueprint identifiers and versions.
+1. Read `README.org` and list the available blueprint identifiers and branch versions.
 2. Select the blueprint that matches the requested project type. Never silently
    substitute a different identifier or compatibility version.
-3. Read that version's `copier.yml` and `answers.yml.example`.
+3. Use the selected branch as the remote Copier template source.
 4. Convert the user's requirements into a complete YAML answers file. Preserve
    types and satisfy all validators declared in `copier.yml`.
 5. Ask for a decision only when an unanswered choice materially changes project
@@ -16,7 +16,8 @@ description: Select and render a versioned mise-managed project blueprint with C
 6. Render with Copier into the requested destination:
 
    ```bash
-   copier copy --data-file ANSWERS_FILE BLUEPRINT_VERSION DESTINATION
+   copier copy --data-file ANSWERS_FILE --vcs-ref BLUEPRINT_BRANCH \
+     https://github.com/lesliebinbin/mise-blueprints.git DESTINATION
    ```
 
 7. Confirm that no `.jinja` files or unresolved template expressions remain in
