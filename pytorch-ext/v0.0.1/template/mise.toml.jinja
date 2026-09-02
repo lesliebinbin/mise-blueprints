@@ -1,0 +1,49 @@
+[tools]
+python = "{{ python_version }}"
+uv = "latest"
+
+[env]
+UV_PYTHON = { value = "{{ '{{ tools.python.path }}' }}", tools = true }
+
+[settings]
+python.uv_venv_auto = "create|source"
+
+[tasks.setup]
+description = "Synchronize dependencies and generate clangd configuration"
+run = """
+uv sync
+uv run python - <<'PY'
+import json
+from pathlib import Path
+
+from torch.utils.cpp_extension import include_paths, library_paths
+
+flags = [f"-I{path}" for path in include_paths()]
+flags.extend(f"-L{path}" for path in library_paths())
+flags.append("-std=c++17")
+
+lines = ["CompileFlags:", "  Add:"]
+lines.extend(f"    - {json.dumps(flag)}" for flag in flags)
+lines.extend(
+    [
+        "  Remove:",
+        '    - "-fno-exceptions"',
+        "",
+        "Diagnostics:",
+        "  ClangTidy:",
+        "    CheckOptions:",
+        '      readability-identifier-naming.FunctionCase: "camelBack"',
+        "",
+    ]
+)
+Path(".clangd").write_text("\\n".join(lines))
+PY
+"""
+
+[tasks.test]
+description = "Run the test suite"
+run = "uv run pytest"
+
+[tasks.check]
+description = "Run project checks"
+depends = ["test"]

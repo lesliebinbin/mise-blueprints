@@ -10,7 +10,7 @@ set -euo pipefail
 output="$(mktemp -d)"
 trap 'rm -rf "$output"' EXIT
 
-for blueprint in uv-python react emacs-lisp; do
+for blueprint in uv-python react emacs-lisp pytorch-ext; do
   copier copy \
     --defaults \
     --data-file "$blueprint/v0.0.1/answers.yml.example" \

@@ -1,0 +1,22 @@
+#+title: {{ project_name }}
+
+{{ description }}
+
+* Setup
+
+The setup task creates a machine-local =.clangd= configuration from the
+PyTorch include and library paths in the project's environment.
+
+#+begin_src shell
+mise install
+mise setup
+#+end_src
+
+* Run the matrix-multiplication examples
+
+#+begin_src shell
+uv run python main.py
+#+end_src
+
+The CUDA learning examples are sourced unchanged from
+[[https://github.com/gau-nernst/learn-cuda/tree/main/02a_matmul_simt][gau-nernst/learn-cuda's matrix-multiplication lesson]].

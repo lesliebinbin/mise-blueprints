@@ -10,7 +10,9 @@ mise-blueprints/
 │   └── v0.0.1/
 ├── react/
 │   └── v0.0.1/
-└── emacs-lisp/
+├── emacs-lisp/
+│   └── v0.0.1/
+└── pytorch-ext/
     └── v0.0.1/
 #+end_example
 
@@ -55,6 +57,15 @@ copier copy \
   --data-file emacs-lisp/v0.0.1/answers.yml.example \
   emacs-lisp/v0.0.1 \
   /tmp/example-emacs-lisp
+#+end_src
+
+Render the PyTorch CUDA extension example:
+
+#+begin_src shell
+copier copy \
+  --data-file pytorch-ext/v0.0.1/answers.yml.example \
+  pytorch-ext/v0.0.1 \
+  /tmp/example-pytorch-ext
 #+end_src
 
 Omit =--data-file= to answer the template questionnaire interactively.
