@@ -1,97 +1,63 @@
-#+title: Mise Blueprints
+#+title: PyTorch CUDA Extension Copier Template
 
-This repository contains versioned, AI-friendly project blueprints. Each
-top-level directory is a blueprint identifier, and each child directory is an
-immutable compatibility version.
+This branch is a standalone Copier template for a mise- and uv-managed
+PyTorch CUDA extension project. It includes CUDA matrix-multiplication learning
+examples and generates a machine-local =.clangd= configuration from the
+installed PyTorch include and library paths.
 
-#+begin_example
-mise-blueprints/
-├── uv-python/
-│   └── v0.0.1/
-├── react/
-│   └── v0.0.1/
-├── emacs-lisp/
-│   └── v0.0.1/
-└── pytorch-ext/
-    └── v0.0.1/
-#+end_example
+* Generate a project
 
-Each version is a self-contained Copier template with:
-
-- =copier.yml=: typed template questions and rendering configuration.
-- =template/=: files and directories rendered into the destination.
-- =answers.yml.example=: complete non-interactive example answers.
-
-* Requirements
-
-Install the repository tools through mise:
+Use this branch directly from GitHub and answer the template questions:
 
 #+begin_src shell
+copier copy \
+  --vcs-ref pytorch-ext/v0.0.1 \
+  gh:lesliebinbin/mise-blueprints \
+  ./my-pytorch-extension
+#+end_src
+
+Use =--defaults= to accept every default answer non-interactively:
+
+#+begin_src shell
+copier copy \
+  --defaults \
+  --vcs-ref pytorch-ext/v0.0.1 \
+  gh:lesliebinbin/mise-blueprints \
+  ./my-pytorch-extension
+#+end_src
+
+* Pinning the template
+
+=--vcs-ref= accepts one Git branch, tag, or commit SHA. The branch above is
+convenient during development. For repeatable automation, use an immutable tag
+or full commit SHA after the branch is finalized:
+
+#+begin_src shell
+copier copy \
+  --vcs-ref <tag-or-full-commit-sha> \
+  gh:lesliebinbin/mise-blueprints \
+  ./my-pytorch-extension
+#+end_src
+
+* Local development
+
+Render the template with its complete example answers:
+
+#+begin_src shell
+copier copy \
+  --data-file answers.yml.example \
+  . \
+  /tmp/example-pytorch-extension
+#+end_src
+
+* Generated project setup
+
+#+begin_src shell
+cd my-pytorch-extension
 mise install
+mise setup
+uv run python main.py
 #+end_src
 
-* Render a blueprint
-
-Render the Python example:
-
-#+begin_src shell
-copier copy \
-  --data-file uv-python/v0.0.1/answers.yml.example \
-  uv-python/v0.0.1 \
-  /tmp/example-python
-#+end_src
-
-Render the React example:
-
-#+begin_src shell
-copier copy \
-  --data-file react/v0.0.1/answers.yml.example \
-  react/v0.0.1 \
-  /tmp/example-react
-#+end_src
-
-Render the Emacs Lisp example:
-
-#+begin_src shell
-copier copy \
-  --data-file emacs-lisp/v0.0.1/answers.yml.example \
-  emacs-lisp/v0.0.1 \
-  /tmp/example-emacs-lisp
-#+end_src
-
-Render the PyTorch CUDA extension example:
-
-#+begin_src shell
-copier copy \
-  --data-file pytorch-ext/v0.0.1/answers.yml.example \
-  pytorch-ext/v0.0.1 \
-  /tmp/example-pytorch-ext
-#+end_src
-
-Omit =--data-file= to answer the template questionnaire interactively.
-
-* Verify all examples
-
-The check task renders every example into temporary directories and removes
-them afterward:
-
-#+begin_src shell
-mise check
-#+end_src
-
-* Versioning policy
-
-A blueprint version is treated as immutable after release. Compatible template
-improvements should be added under a new version directory, preserving older
-versions for existing automation:
-
-#+begin_example
-uv-python/
-├── v0.0.1/
-├── v0.1.0/
-└── v1.0.0/
-#+end_example
-
-Agents should select an explicit identifier and version, produce a complete
-answers file, and invoke Copier. This keeps requirement interpretation
-flexible while file generation remains repeatable.
+=mise setup= synchronizes dependencies and writes =.clangd=. Running =main.py=
+requires a CUDA-capable PyTorch installation and a compatible NVIDIA system.
