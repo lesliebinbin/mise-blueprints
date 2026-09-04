@@ -15,6 +15,7 @@ module = torch.utils.cpp_extension.load(
         "-O3",
         "-lineinfo",
         "-Xptxas=-v",
+        "--std=c++20",
     ],
     verbose=True,
 )
