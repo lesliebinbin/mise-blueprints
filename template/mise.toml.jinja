@@ -4,16 +4,43 @@ uv = "latest"
 
 [tasks.setup]
 description = "Synchronize dependencies and generate clangd configuration"
-run = """
+run = '''
 uv sync
 uv run python - <<'PY'
 import json
+import os
+import sysconfig
 from pathlib import Path
 
-from torch.utils.cpp_extension import include_paths, library_paths
+from torch.utils.cpp_extension import CUDA_HOME, include_paths, library_paths
 
-flags = [f"-I{path}" for path in include_paths()]
+flags = []
+
+# Python include headers from the current environment
+py_include = sysconfig.get_path("include")
+if py_include and Path(py_include).exists():
+    flags.append(f"-I{py_include}")
+    flags.append("--std=c++20")
+
+# PyTorch include and library paths
+flags.extend(f"-I{path}" for path in include_paths())
 flags.extend(f"-L{path}" for path in library_paths())
+
+# CUDA include paths and flags via CUDA_HOME
+cuda_home = CUDA_HOME or os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
+if not cuda_home and Path("/usr/local/cuda").exists():
+    cuda_home = "/usr/local/cuda"
+
+if cuda_home:
+    cuda_path = Path(cuda_home)
+    flags.append(f"--cuda-path={cuda_home}")
+    cuda_include = cuda_path / "include"
+    if cuda_include.exists():
+        flags.append(f"-I{cuda_include}")
+    cccl_include = cuda_include / "cccl"
+    if cccl_include.exists():
+        flags.append(f"-I{cccl_include}")
+
 flags.append("-std=c++20")
 
 lines = ["CompileFlags:", "  Add:"]
@@ -30,9 +57,9 @@ lines.extend(
         "",
     ]
 )
-Path(".clangd").write_text("\\n".join(lines))
+Path(".clangd").write_text("\n".join(lines) + "\n")
 PY
-"""
+'''
 
 [tasks.test]
 description = "Run the test suite"
