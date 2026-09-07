@@ -9,6 +9,18 @@ one published branch; =master= is documentation only and is not a template.
 | React | =react/v0.0.1= |
 | Emacs Lisp | =emacs-lisp/v0.0.1= |
 | PyTorch CUDA extension | =pytorch-ext/v0.0.1= |
+| Triton and CUDA examples | =triton-ext/v0.0.1= |
+
+* Repository layout
+
+Each =BLUEPRINT/vMAJOR.MINOR.PATCH= branch is an independently renderable
+template with =copier.yml=, =answers.yml.example=, and =template/= at its root.
+The blueprint identifier and version are encoded in the branch name, not in
+directories on =master=.
+
+Treat released versions as immutable; publish behavior changes on a new version
+branch and update this catalog. For reproducible generation, =--vcs-ref= can
+also select a full commit SHA.
 
 * Generate with defaults
 
@@ -38,3 +50,31 @@ copier copy --data-file answers.yml \
   https://github.com/lesliebinbin/mise-blueprints.git \
   ./my-react-app
 #+end_src
+
+Use the selected branch's =answers.yml.example= as the starting point for other
+blueprints; available questions and defaults are defined in its =copier.yml=.
+
+* Generated project workflow
+
+Generated projects use mise as the runtime and task entry point. For the React
+example:
+
+#+begin_src shell
+cd my-react-app
+mise install
+mise setup
+mise check
+#+end_src
+
+Available tasks and external prerequisites vary by blueprint; consult the
+generated project's =README.org= and =mise.toml=. For example, the Emacs Lisp
+blueprint uses an existing Emacs and Eldev installation and has no =setup= task.
+
+* Validation
+
+=master= has no repository-wide =mise check= task. After changing a template,
+render the relevant version with its complete =answers.yml.example= into a
+temporary directory outside this repository. Check that rendering succeeds and
+leaves no unresolved template expressions or =.jinja= filenames, then run the
+generated project's mise setup and check tasks where available, with its required
+tools installed. Remove the temporary output afterward.
