@@ -20,6 +20,20 @@ mise build    # configure + compile -> build/lib{{ module_name }}.so
 mise check    # build, then load the module in Emacs batch mode as a smoke test
 #+end_src
 
+If you drive CMake directly instead of mise, the bundled =CMakePresets.json=
+reproduces the same configuration (build directory =build/=, Debug build
+type) without typing the flags:
+
+#+begin_src shell
+cmake --list-presets            # list available presets
+cmake --preset default          # configure
+cmake --build --preset default  # compile -> build/lib{{ module_name }}.so
+#+end_src
+
+Presets require CMake 3.21 or newer; the plain =cmake -S . -B build=
+commands in =mise.toml= work from CMake 3.16.  Both entry points write to the
+same =build/= directory.
+
 * Load into Emacs
 
 Loading and wrapping the module is up to you.  The minimal form works from

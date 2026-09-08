@@ -65,6 +65,20 @@ mise check
 =build/libmy-emacs-module.so=; =mise check= additionally loads the compiled
 module in Emacs batch mode and calls one of its functions as a smoke test.
 
+If you drive CMake directly instead of mise, the bundled =CMakePresets.json=
+reproduces the same configuration (build directory =build/=, Debug build
+type) without typing the flags:
+
+#+begin_src shell
+cmake --list-presets          # list available presets
+cmake --preset default        # configure into build/
+cmake --build --preset default  # compile into build/libmy-emacs-module.so
+#+end_src
+
+Presets require CMake 3.21 or newer; the plain =cmake -S . -B build=
+commands inside =mise.toml= keep working on older CMake.  Both entry points
+write to the same =build/= directory.
+
 External prerequisites, not managed by mise: an Emacs with native module
 support and the matching =emacs-module.h= header (typically installed
 alongside Emacs at =/usr/local/include= or =/usr/include=), CMake 3.16 or
