@@ -8,6 +8,7 @@ one published branch; =master= is documentation only and is not a template.
 | uv Python | =uv-python/v0.0.1= |
 | React | =react/v0.0.1= |
 | Emacs Lisp | =emacs-lisp/v0.0.1= |
+| Emacs C++20 module | =emacs-ext/v0.0.1= |
 | PyTorch CUDA extension | =pytorch-ext/v0.0.1= |
 | Triton and CUDA examples | =triton-ext/v0.0.1= |
 
