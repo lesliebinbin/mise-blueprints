@@ -1,80 +1,72 @@
-#+title: Mise Blueprints
+#+title: Emacs C++20 Native Module Copier Template
 
-This repository is an index of standalone, versioned Copier templates. Select
-one published branch; =master= is documentation only and is not a template.
+This branch is a standalone Copier template for a mise-managed Emacs native
+module ("dynamic module") written in C++20 and built with CMake.  Generated
+projects contain a small but complete module source plus the CMake glue needed
+to compile it against =emacs-module.h=; the result is a shared library (a
+=.so= on GNU/Linux) that you load into Emacs yourself with =module-load= and
+wrap however you like.
 
-| Blueprint | Branch |
-|-----------+--------|
-| uv Python | =uv-python/v0.0.1= |
-| React | =react/v0.0.1= |
-| Emacs Lisp | =emacs-lisp/v0.0.1= |
-| PyTorch CUDA extension | =pytorch-ext/v0.0.1= |
-| Triton and CUDA examples | =triton-ext/v0.0.1= |
+* Generate a module
 
-* Repository layout
-
-Each =BLUEPRINT/vMAJOR.MINOR.PATCH= branch is an independently renderable
-template with =copier.yml=, =answers.yml.example=, and =template/= at its root.
-The blueprint identifier and version are encoded in the branch name, not in
-directories on =master=.
-
-Treat released versions as immutable; publish behavior changes on a new version
-branch and update this catalog. For reproducible generation, =--vcs-ref= can
-also select a full commit SHA.
-
-* Generate with defaults
+Use this branch directly from GitHub and answer the template questions:
 
 #+begin_src shell
-copier copy --defaults \
-  --vcs-ref react/v0.0.1 \
+copier copy \
+  --vcs-ref emacs-ext/v0.0.1 \
   https://github.com/lesliebinbin/mise-blueprints.git \
-  ./my-react-app
+  ./my-emacs-module
 #+end_src
 
-* Generate with an answers file
-
-Create a local answers file, for example =answers.yml=:
-
-#+begin_src yaml
-project_name: My React App
-project_slug: my-react-app
-description: My mise-managed React application
-node_version: "24"
-#+end_src
-
-Then pass it to Copier:
+Use =--defaults= to accept every default answer non-interactively:
 
 #+begin_src shell
-copier copy --data-file answers.yml \
-  --vcs-ref react/v0.0.1 \
+copier copy \
+  --defaults \
+  --vcs-ref emacs-ext/v0.0.1 \
   https://github.com/lesliebinbin/mise-blueprints.git \
-  ./my-react-app
+  ./my-emacs-module
 #+end_src
 
-Use the selected branch's =answers.yml.example= as the starting point for other
-blueprints; available questions and defaults are defined in its =copier.yml=.
+* Pinning the template
 
-* Generated project workflow
-
-Generated projects use mise as the runtime and task entry point. For the React
-example:
+=--vcs-ref= accepts one Git branch, tag, or commit SHA. For repeatable
+automation, use an immutable tag or full commit SHA after the branch is
+finalized:
 
 #+begin_src shell
-cd my-react-app
+copier copy \
+  --vcs-ref <tag-or-full-commit-sha> \
+  https://github.com/lesliebinbin/mise-blueprints.git \
+  ./my-emacs-module
+#+end_src
+
+* Local development
+
+Render the template with its complete example answers:
+
+#+begin_src shell
+copier copy \
+  --data-file answers.yml.example \
+  . \
+  /tmp/example-emacs-module
+#+end_src
+
+* Generated project setup
+
+#+begin_src shell
+cd my-emacs-module
 mise install
-mise setup
+mise build
 mise check
 #+end_src
 
-Available tasks and external prerequisites vary by blueprint; consult the
-generated project's =README.org= and =mise.toml=. For example, the Emacs Lisp
-blueprint uses an existing Emacs and Eldev installation and has no =setup= task.
+=mise build= configures and compiles the module into =build/=, producing
+=build/libmy-emacs-module.so=; =mise check= additionally loads the compiled
+module in Emacs batch mode and calls one of its functions as a smoke test.
 
-* Validation
-
-=master= has no repository-wide =mise check= task. After changing a template,
-render the relevant version with its complete =answers.yml.example= into a
-temporary directory outside this repository. Check that rendering succeeds and
-leaves no unresolved template expressions or =.jinja= filenames, then run the
-generated project's mise setup and check tasks where available, with its required
-tools installed. Remove the temporary output afterward.
+External prerequisites, not managed by mise: an Emacs with native module
+support and the matching =emacs-module.h= header (typically installed
+alongside Emacs at =/usr/local/include= or =/usr/include=), CMake 3.16 or
+newer, and a C++20 compiler.  If your Emacs installs headers elsewhere, point
+CMake at them with =cmake -DEMACS_MODULE_INCLUDE_DIR=/path/to/include=.
