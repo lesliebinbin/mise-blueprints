@@ -1,0 +1,18 @@
+# CMake, a C++17 compiler, and an installed PhysX 5 SDK are external
+# prerequisites (see README.org); this file only drives them.
+
+[tasks.configure]
+description = "Configure the CMake build directory"
+run = "cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DPHYSX_BUILD_TYPE=release"
+
+[tasks.build]
+description = "Compile the executable into build/"
+depends = ["configure"]
+run = "cmake --build build"
+
+# Not named "run": `mise run` is mise's own subcommand, so a task by that name
+# could only be invoked as the awkward `mise run run`.
+[tasks.check]
+description = "Build, then run the executable as a smoke test"
+depends = ["build"]
+run = "./build/{{ project_slug }}"

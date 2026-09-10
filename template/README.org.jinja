@@ -1,0 +1,145 @@
+#+title: {{ project_name }}
+
+{{ description }}
+
+A C++17 GPU program built with CMake and managed with mise.  It includes the
+PhysX umbrella header, prints the SDK version it was compiled against, and
+creates and releases a =PxFoundation=, a =PxPhysics=, and a CUDA context
+manager before exiting.
+
+* Requirements
+
+- An installed PhysX 5 SDK (headers plus the =bin/linux.x86_64/<config>/=
+  libraries, including =libPhysXGpu_64.so=)
+- An NVIDIA GPU with a working driver.  The CUDA toolkit is /not/ required --
+  nothing CUDA is linked, and the driver is reached at run time.
+- CMake 3.16 or newer and a C++17 compiler
+- mise
+
+* Build and check
+
+#+begin_src shell
+mise build    # configure + compile -> build/{{ project_slug }}
+mise check    # build, then run it as a smoke test
+#+end_src
+
+The program exits non-zero if =PxCreateFoundation=, =PxCreatePhysics=, or
+=PxCreateCudaContextManager= fails, so =mise check= is a real test of the link
+and of the GPU backend, not just of the compile.  There is no separate task for
+running the binary -- =./build/{{ project_slug }}= does that, and a task named
+=run= would collide with mise's own =mise run= subcommand.
+
+If you drive CMake directly instead of mise, the bundled =CMakePresets.json=
+reproduces the same configuration (build directory =build/=, Release build
+type, release PhysX libraries) without typing the flags:
+
+#+begin_src shell
+cmake --list-presets            # list available presets
+cmake --preset default          # configure
+cmake --build --preset default  # compile -> build/{{ project_slug }}
+#+end_src
+
+Presets require CMake 3.21 or newer; the plain =cmake -S . -B build=
+commands in =mise.toml= work from CMake 3.16.  Both entry points write to the
+same =build/= directory.
+
+* Choosing the PhysX installation
+
+PhysX installs no CMake config package, so =CMakeLists.txt= finds the SDK by
+hand.  It treats as the SDK root whichever directory contains
+=include/PxPhysicsAPI.h=, checking in order:
+
+1. =-DPHYSX_ROOT=/path/to/physx= (a CMake cache variable)
+2. =$PHYSX_ROOT= in the environment
+3. =$HOME/local=
+4. =/usr/local=
+
+If none matches, configure fails with a message naming =-DPHYSX_ROOT=, rather
+than failing later in the compiler with a missing-header error.
+
+=PHYSX_BUILD_TYPE= picks which installed library directory is linked:
+
+#+begin_src shell
+cmake -S . -B build -DPHYSX_BUILD_TYPE=checked
+#+end_src
+
+It accepts =debug=, =checked=, =profile=, or =release= (the default), and has
+to name a configuration that was actually built: the directories are
+=bin/linux.x86_64/<config>/=, so an SDK installed only in release has no
+=checked= libraries to find.  Configure reports the resolved paths:
+
+#+begin_src text
+-- PhysX root : /home/you/local
+-- PhysX libs : /home/you/local/bin/linux.x86_64/release (release)
+#+end_src
+
+=PHYSX_BUILD_TYPE= also chooses the default =CMAKE_BUILD_TYPE= for this
+project's own sources -- =Debug= for =debug= and =checked=, =Release=
+otherwise -- but the two are independent, and =-DCMAKE_BUILD_TYPE= overrides
+it.
+
+* Walkthrough of =src/main.cpp=
+
+The file is short on purpose, and each part is load-bearing:
+
+- =#include <PxPhysicsAPI.h>= is the SDK's umbrella header; including it is
+  itself a check that the include path is right.
+- =PX_PHYSICS_VERSION_MAJOR= and friends come from
+  =foundation/PxPhysicsVersion.h= and describe the /headers/.
+- =PxDefaultAllocator= and =PxDefaultErrorCallback= (from =extensions/=) are
+  required because PhysX reports errors through callbacks rather than by
+  throwing exceptions.
+- =PxCreateFoundation= and =PxCreatePhysics= are declared in the /global/
+  namespace, while the types they take and return (=physx::PxFoundation=,
+  =physx::PxPhysics=, =physx::PxTolerancesScale=) live in =physx::=.  Mixing
+  up the two is the most common first compile error in PhysX code.
+- =#include <gpu/PxGpu.h>= pulls in =cudamanager/PxCudaContextManager.h= and
+  declares =PxCreateCudaContextManager=.  It needs no CUDA headers at all:
+  PhysX keeps the driver types opaque precisely so that an SDK consumer does
+  not need the toolkit installed.
+- All three factory functions return null rather than aborting -- on version
+  mismatch for the first two, and on a backend that will not load for the
+  third -- which is why each return value is checked.
+- Objects are released in reverse order of creation; PhysX has no garbage
+  collection and no exceptions to unwind with.
+
+The program prints the header version, not the runtime version: PhysX 5 exposes
+no public API for the latter, and =PxCreateFoundation= returning non-null is
+the SDK's own assertion that the two agree.
+
+* How the GPU backend is reached
+
+Nothing CUDA is linked, which is the part that surprises people.  A program can
+name only the five PhysX static libraries and still run on the GPU:
+
+- =libPhysXGpu_64.so=, the GPU backend, is loaded by the SDK with =dlopen= at
+  run time.  It appears neither in the link line nor in =ldd= output, so a
+  program can link perfectly and still fail at the first
+  =PxCreateCudaContextManager= with a null return.
+- The NVIDIA driver is reached the same way.  No PhysX library, static or
+  shared, lists =libcuda= in its =NEEDED= entries, and no static library
+  references a =cu*= symbol -- confirm with =readelf -d= and =nm -u=.  Adding
+  =-lcuda= by hand compiles and runs, but the linker drops it as unused.
+- So the CUDA toolkit is needed neither at build time nor at run time.  Only
+  the driver is, and it has to be present when the program /runs/, not when it
+  links.
+
+The build's one real obligation is making that =dlopen= succeed.
+=CMakeLists.txt= gives the executable a =BUILD_RPATH=/=INSTALL_RPATH= of the
+PhysX library directory, so no =LD_LIBRARY_PATH= is needed.  To confirm the
+rpath is doing the work rather than an inherited environment variable, run the
+binary with the search path cleared:
+
+#+begin_src shell
+env -u LD_LIBRARY_PATH ./build/{{ project_slug }}
+#+end_src
+
+* Where to go next
+
+- Simulate on the GPU: build a =PxSceneDesc= with
+  =physx::PxSceneFlag::eENABLE_GPU_DYNAMICS=, attach the context manager
+  through =desc.cudaContextManager=, and select =PxBroadPhaseType::eGPU= for
+  GPU broadphase.
+- Add more of the SDK: =PhysXCooking=, =PhysXVehicle=, and
+  =PhysXCharacterKinematic= are separate static libraries in the same
+  directory, and belong inside the =--start-group= block in =CMakeLists.txt=.

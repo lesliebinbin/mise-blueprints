@@ -1,0 +1,111 @@
+cmake_minimum_required(VERSION 3.16)
+
+project({{ project_slug }} VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# ------------------------------------------------------------------ PhysX
+# A PhysX installation pairs one include directory with one library directory
+# per configuration.  PHYSX_BUILD_TYPE names which of those configurations to
+# link -- it describes what was built and installed on this machine, so an SDK
+# built only in "release" cannot be linked as "checked".
+set(PHYSX_BUILD_TYPE "release" CACHE STRING
+    "PhysX library configuration to link against")
+set_property(CACHE PHYSX_BUILD_TYPE PROPERTY STRINGS debug checked profile release)
+
+if(NOT CMAKE_BUILD_TYPE)
+  if(PHYSX_BUILD_TYPE STREQUAL "debug" OR PHYSX_BUILD_TYPE STREQUAL "checked")
+    set(_physx_default_build_type Debug)
+  else()
+    set(_physx_default_build_type Release)
+  endif()
+  set(CMAKE_BUILD_TYPE "${_physx_default_build_type}" CACHE STRING "Build type" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+               Debug Release RelWithDebInfo MinSizeRel)
+endif()
+
+# PhysX 5 installs no CMake config package, so find the SDK root by hand: it is
+# the directory holding include/PxPhysicsAPI.h.  Override with
+# -DPHYSX_ROOT=/path/to/sdk or by exporting PHYSX_ROOT.
+set(PHYSX_ROOT "" CACHE PATH "PhysX SDK root (the directory containing include/ and bin/)")
+
+if(NOT PHYSX_ROOT)
+  foreach(_physx_candidate "$ENV{PHYSX_ROOT}" "$ENV{HOME}/local" "/usr/local")
+    if(EXISTS "${_physx_candidate}/include/PxPhysicsAPI.h")
+      set(PHYSX_ROOT "${_physx_candidate}" CACHE PATH "PhysX SDK root" FORCE)
+      break()
+    endif()
+  endforeach()
+endif()
+
+if(NOT PHYSX_ROOT OR NOT EXISTS "${PHYSX_ROOT}/include/PxPhysicsAPI.h")
+  message(FATAL_ERROR
+    "No PhysX SDK found (looked for <root>/include/PxPhysicsAPI.h).\n"
+    "Point PHYSX_ROOT at the SDK root:\n"
+    "  cmake -S . -B build -DPHYSX_ROOT=/path/to/physx")
+endif()
+
+set(PHYSX_INCLUDE_DIR "${PHYSX_ROOT}/include")
+set(PHYSX_LIBRARY_DIR "${PHYSX_ROOT}/bin/linux.x86_64/${PHYSX_BUILD_TYPE}")
+
+if(NOT EXISTS "${PHYSX_LIBRARY_DIR}/libPhysX_static_64.a")
+  message(FATAL_ERROR
+    "No PhysX libraries for PHYSX_BUILD_TYPE=${PHYSX_BUILD_TYPE}.\n"
+    "Expected ${PHYSX_LIBRARY_DIR}/libPhysX_static_64.a.\n"
+    "Build and install that configuration, or configure against one that "
+    "exists:\n  cmake -S . -B build -DPHYSX_BUILD_TYPE=release")
+endif()
+
+message(STATUS "PhysX root : ${PHYSX_ROOT}")
+message(STATUS "PhysX libs : ${PHYSX_LIBRARY_DIR} (${PHYSX_BUILD_TYPE})")
+
+# -------------------------------------------------------------------- CUDA
+# Nothing CUDA is linked, which is worth stating because it is not the obvious
+# arrangement and the opposite is easy to assume.
+#
+# The GPU backend, libPhysXGpu_64.so, is loaded by the SDK with dlopen at run
+# time, and it reaches the driver the same way: no PhysX library, static or
+# shared, lists libcuda in its NEEDED entries, and no static library references
+# a cu* symbol.  So the CUDA toolkit is not needed to build this program, and
+# neither is an explicit -lcuda -- passing one is harmless, but the linker
+# drops it as unused.
+#
+# What the build does have to arrange is that the dlopen succeeds.  The
+# executable gets an rpath to the PhysX library directory, set on the target
+# below.  Without it the program links perfectly and then fails at the first
+# PxCreateCudaContextManager.
+
+# --------------------------------------------------------------- executable
+add_executable({{ project_slug }} src/main.cpp)
+
+target_include_directories({{ project_slug }} PRIVATE "${PHYSX_INCLUDE_DIR}")
+
+# PhysX is compiled without RTTI and without exceptions; matching it keeps the
+# two sides of the ABI consistent.
+target_compile_options({{ project_slug }} PRIVATE
+    -Wall -Wextra
+    -fno-rtti -fno-exceptions)
+
+# The PhysX static libraries reference each other in a cycle, so they have to
+# be resolved as a group rather than listed in dependency order twice.
+target_link_directories({{ project_slug }} PRIVATE "${PHYSX_LIBRARY_DIR}")
+target_link_libraries({{ project_slug }} PRIVATE
+    -Wl,--start-group
+        PhysXExtensions_static_64
+        PhysX_static_64
+        PhysXPvdSDK_static_64
+        PhysXCommon_static_64
+        PhysXFoundation_static_64
+    -Wl,--end-group
+    pthread
+    dl)
+
+# libPhysXGpu_64.so is dlopen'd rather than linked, so it has to be findable at
+# run time.  An rpath beats asking everyone to export LD_LIBRARY_PATH.  CMake
+# emits RUNPATH for this, which glibc does consult when resolving a dlopen made
+# from the calling executable.
+set_target_properties({{ project_slug }} PROPERTIES
+    BUILD_RPATH "${PHYSX_LIBRARY_DIR}"
+    INSTALL_RPATH "${PHYSX_LIBRARY_DIR}")

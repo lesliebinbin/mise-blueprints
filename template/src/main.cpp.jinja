@@ -1,0 +1,96 @@
+// {{ description }}
+//
+// A deliberately small PhysX 5 program.  It includes the SDK's umbrella
+// header, prints the version it was compiled against, and then creates and
+// releases a PxFoundation, a PxPhysics, and a CUDA context manager.
+//
+// Creating real objects is the point.  A program that only reads PX_* macros
+// would compile and link successfully against the wrong libraries or none at
+// all, so it would prove nothing.  PxCreateFoundation returns null when the
+// headers and the linked libraries disagree about the version, and
+// PxCreateCudaContextManager returns null when the GPU backend cannot be
+// loaded -- so this is the cheapest honest check that the SDK was found, that
+// it was linked, and that the GPU backend is reachable.
+
+#include <cstdio>
+
+#include <extensions/PxDefaultAllocator.h>
+#include <extensions/PxDefaultErrorCallback.h>
+#include <foundation/PxPhysicsVersion.h>
+#include <gpu/PxGpu.h>
+#include <PxPhysicsAPI.h>
+
+namespace
+{
+	// PhysX reports errors through callbacks rather than by throwing, so even
+	// a minimal program has to supply two of them.
+	physx::PxDefaultAllocator gAllocator;
+	physx::PxDefaultErrorCallback gErrorCallback;
+}
+
+int main()
+{
+	std::printf("{{ project_slug }}\n");
+	std::printf("  headers : PhysX %d.%d.%d\n", PX_PHYSICS_VERSION_MAJOR,
+	            PX_PHYSICS_VERSION_MINOR, PX_PHYSICS_VERSION_BUGFIX);
+
+	// The factory functions live in the global namespace; the types they take
+	// and return do not.
+	physx::PxFoundation* foundation =
+	    PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
+	if (!foundation)
+	{
+		std::fprintf(stderr, "PxCreateFoundation failed\n");
+		return 1;
+	}
+	std::printf("  runtime : PxFoundation created\n");
+
+	physx::PxPhysics* physics =
+	    PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, physx::PxTolerancesScale());
+	if (!physics)
+	{
+		std::fprintf(stderr, "PxCreatePhysics failed\n");
+		foundation->release();
+		return 1;
+	}
+	std::printf("  runtime : PxPhysics created\n");
+
+	// PhysX loads its GPU backend, libPhysXGpu_64.so, with dlopen rather than
+	// linking it, so this call is also what proves the executable's rpath
+	// reaches the SDK's library directory.
+	const physx::PxCudaContextManagerDesc cudaDesc;
+	physx::PxCudaContextManager*          cuda =
+	    PxCreateCudaContextManager(*foundation, cudaDesc);
+	if (!cuda)
+	{
+		std::fprintf(stderr,
+		             "PxCreateCudaContextManager failed: the GPU backend could not "
+		             "be loaded.\nCheck that libPhysXGpu_64.so is in the PhysX "
+		             "library directory and that the NVIDIA driver is loaded.\n");
+		physics->release();
+		foundation->release();
+		return 1;
+	}
+	if (!cuda->contextIsValid())
+	{
+		std::fprintf(stderr, "CUDA context is not valid (no usable GPU?)\n");
+		cuda->release();
+		physics->release();
+		foundation->release();
+		return 1;
+	}
+
+	const char* device = cuda->getDeviceName();
+	const int   driver = cuda->getDriverVersion();
+	std::printf("  device  : %s\n", device ? device : "(name unavailable)");
+	std::printf("  driver  : %d (%d.%d)\n", driver, driver / 1000,
+	            (driver % 1000) / 10);
+
+	// Released in reverse order of creation; PhysX has no garbage collection.
+	cuda->release();
+	physics->release();
+	foundation->release();
+
+	std::printf("  ok\n");
+	return 0;
+}

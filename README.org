@@ -1,81 +1,125 @@
-#+title: Mise Blueprints
+#+title: PhysX 5 CMake Copier Template
 
-This repository is an index of standalone, versioned Copier templates. Select
-one published branch; =master= is documentation only and is not a template.
+This branch is a standalone Copier template for a mise-managed C++17 program
+built with CMake against an installed PhysX 5 SDK.  Generated projects contain
+a single small GPU executable that includes the SDK umbrella header, prints the
+version it was compiled against, and creates and releases a =PxFoundation=, a
+=PxPhysics=, and a CUDA context manager.
 
-| Blueprint | Branch |
-|-----------+--------|
-| uv Python | =uv-python/v0.0.1= |
-| React | =react/v0.0.1= |
-| Emacs Lisp | =emacs-lisp/v0.0.1= |
-| Emacs C++20 module | =emacs-ext/v0.0.1= |
-| PyTorch CUDA extension | =pytorch-ext/v0.0.1= |
-| Triton and CUDA examples | =triton-ext/v0.0.1= |
+Creating real objects is deliberate.  A program that only read =PX_*= macros
+would compile and link against the wrong libraries, or against none at all, and
+still appear to work.  =PxCreateFoundation= returns null when the headers and
+the linked libraries disagree about the version, and
+=PxCreateCudaContextManager= returns null when the GPU backend will not load,
+so the generated =check= task proves the SDK was found, was linked, and can
+reach a GPU -- not merely that a header was included.
 
-* Repository layout
+* Generate a project
 
-Each =BLUEPRINT/vMAJOR.MINOR.PATCH= branch is an independently renderable
-template with =copier.yml=, =answers.yml.example=, and =template/= at its root.
-The blueprint identifier and version are encoded in the branch name, not in
-directories on =master=.
-
-Treat released versions as immutable; publish behavior changes on a new version
-branch and update this catalog. For reproducible generation, =--vcs-ref= can
-also select a full commit SHA.
-
-* Generate with defaults
+Use this branch directly from GitHub and answer the template questions:
 
 #+begin_src shell
-copier copy --defaults \
-  --vcs-ref react/v0.0.1 \
+copier copy \
+  --vcs-ref physx-cmake/v0.0.1 \
   https://github.com/lesliebinbin/mise-blueprints.git \
-  ./my-react-app
+  ./my-physx-project
 #+end_src
 
-* Generate with an answers file
-
-Create a local answers file, for example =answers.yml=:
-
-#+begin_src yaml
-project_name: My React App
-project_slug: my-react-app
-description: My mise-managed React application
-node_version: "24"
-#+end_src
-
-Then pass it to Copier:
+Use =--defaults= to accept every default answer non-interactively:
 
 #+begin_src shell
-copier copy --data-file answers.yml \
-  --vcs-ref react/v0.0.1 \
+copier copy \
+  --defaults \
+  --vcs-ref physx-cmake/v0.0.1 \
   https://github.com/lesliebinbin/mise-blueprints.git \
-  ./my-react-app
+  ./my-physx-project
 #+end_src
 
-Use the selected branch's =answers.yml.example= as the starting point for other
-blueprints; available questions and defaults are defined in its =copier.yml=.
+* Pinning the template
 
-* Generated project workflow
-
-Generated projects use mise as the runtime and task entry point. For the React
-example:
+=--vcs-ref= accepts one Git branch, tag, or commit SHA.  For repeatable
+automation, use an immutable tag or full commit SHA after the branch is
+finalized:
 
 #+begin_src shell
-cd my-react-app
+copier copy \
+  --vcs-ref <tag-or-full-commit-sha> \
+  https://github.com/lesliebinbin/mise-blueprints.git \
+  ./my-physx-project
+#+end_src
+
+* Local development
+
+Render the template with its complete example answers:
+
+#+begin_src shell
+copier copy \
+  --data-file answers.yml.example \
+  . \
+  /tmp/example-physx-project
+#+end_src
+
+* Generated project setup
+
+#+begin_src shell
+cd my-physx-project
 mise install
-mise setup
+mise build
 mise check
 #+end_src
 
-Available tasks and external prerequisites vary by blueprint; consult the
-generated project's =README.org= and =mise.toml=. For example, the Emacs Lisp
-blueprint uses an existing Emacs and Eldev installation and has no =setup= task.
+=mise build= configures and compiles =build/my-physx-project=.  =mise check=
+builds and then runs it, so the program's exit status is the smoke test: it
+exits non-zero if PhysX cannot be initialised.
 
-* Validation
+If you drive CMake directly instead of mise, the bundled =CMakePresets.json=
+reproduces the same configuration (build directory =build/=, Release build
+type, release PhysX libraries) without typing the flags:
 
-=master= has no repository-wide =mise check= task. After changing a template,
-render the relevant version with its complete =answers.yml.example= into a
-temporary directory outside this repository. Check that rendering succeeds and
-leaves no unresolved template expressions or =.jinja= filenames, then run the
-generated project's mise setup and check tasks where available, with its required
-tools installed. Remove the temporary output afterward.
+#+begin_src shell
+cmake --list-presets            # list available presets
+cmake --preset default          # configure into build/
+cmake --build --preset default  # compile into build/my-physx-project
+#+end_src
+
+Presets require CMake 3.21 or newer; the plain =cmake -S . -B build=
+commands inside =mise.toml= keep working on older CMake.  Both entry points
+write to the same =build/= directory.
+
+* Finding PhysX
+
+The template locates the SDK by looking for =<root>/include/PxPhysicsAPI.h=,
+checking =$PHYSX_ROOT=, then =$HOME/local=, then =/usr/local=.  Override it
+when your SDK lives elsewhere:
+
+#+begin_src shell
+cmake -S . -B build -DPHYSX_ROOT=/path/to/physx
+#+end_src
+
+=PHYSX_BUILD_TYPE= selects which installed library configuration to link
+(=debug=, =checked=, =profile=, or =release=, default =release=).  This
+describes what was actually built on the machine, not a preference: an SDK
+installed only in release cannot be linked as checked, and the configure step
+fails with an explicit message if the directory is missing.  It also picks the
+default =CMAKE_BUILD_TYPE= for the project's own sources.
+
+* GPU support
+
+GPU support is not optional here: the generated program always creates a CUDA
+context manager.  That needs an NVIDIA GPU with a working driver, but /not/ the
+CUDA toolkit.
+
+Nothing CUDA is linked.  =libPhysXGpu_64.so= is loaded by the SDK with =dlopen=
+at run time, and the driver is reached the same way -- no PhysX library, static
+or shared, lists =libcuda= in its =NEEDED= entries.  The one real obligation is
+that the =dlopen= succeed, so the executable gets an rpath to the PhysX library
+directory.  Without it the program links cleanly and then fails at the first
+=PxCreateCudaContextManager=.  To confirm the rpath is doing the work rather
+than an inherited =LD_LIBRARY_PATH=:
+
+#+begin_src shell
+env -u LD_LIBRARY_PATH ./build/my-physx-project
+#+end_src
+
+External prerequisites, not managed by mise: an installed PhysX 5 SDK, an
+NVIDIA GPU and driver, CMake 3.16 or newer, and a C++17 compiler.
