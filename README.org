@@ -6,6 +6,7 @@ one published branch; =master= is documentation only and is not a template.
 | Blueprint | Branch |
 |-----------+--------|
 | uv Python | =uv-python/v0.0.1= |
+| uv OpenUSD | =uv-openusd/v0.0.1= |
 | React | =react/v0.0.1= |
 | Emacs Lisp | =emacs-lisp/v0.0.1= |
 | Emacs C++20 module | =emacs-ext/v0.0.1= |
