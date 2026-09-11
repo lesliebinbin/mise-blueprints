@@ -1,15 +1,15 @@
-#+title: uv Python Copier Template
+#+title: uv OpenUSD Copier Template
 
-This branch is a standalone Copier template for a mise- and uv-managed Python
-package.
+This branch is a standalone Copier template for a mise- and uv-managed OpenUSD
+project.
 
-* Generate a package
+* Generate a project
 
 #+begin_src shell
 copier copy \
-  --vcs-ref uv-python/v0.0.1 \
+  --vcs-ref uv-openusd/v0.0.1 \
   git@github.com:lesliebinbin/mise-blueprints.git \
-  ./my-python-package
+  ./my-openusd-project
 #+end_src
 
 Use =--defaults= to accept every default answer non-interactively:
@@ -17,9 +17,9 @@ Use =--defaults= to accept every default answer non-interactively:
 #+begin_src shell
 copier copy \
   --defaults \
-  --vcs-ref uv-python/v0.0.1 \
+  --vcs-ref uv-openusd/v0.0.1 \
   git@github.com:lesliebinbin/mise-blueprints.git \
-  ./my-python-package
+  ./my-openusd-project
 #+end_src
 
 * Pinning the template
@@ -32,7 +32,7 @@ finalized:
 copier copy \
   --vcs-ref <tag-or-full-commit-sha> \
   git@github.com:lesliebinbin/mise-blueprints.git \
-  ./my-python-package
+  ./my-openusd-project
 #+end_src
 
 * Local development
@@ -41,14 +41,17 @@ copier copy \
 copier copy \
   --data-file answers.yml.example \
   . \
-  /tmp/example-python-package
+  /tmp/example-openusd-project
 #+end_src
 
-* Generated package setup
+* Generated project setup
 
 #+begin_src shell
-cd my-python-package
+cd my-openusd-project
 mise install
+# Build OpenUSD with default features:
 mise setup
+# Or build OpenUSD with all features:
+mise setup --full
 mise check
 #+end_src

@@ -5,7 +5,7 @@ _answers_file: .copier-answers.yml
 project_name:
   type: str
   help: Human-readable project name
-  default: My Python Project
+  default: My OpenUSD Project
 
 project_slug:
   type: str
@@ -28,7 +28,7 @@ package_name:
 description:
   type: str
   help: One-line project description
-  default: A mise and uv managed Python project
+  default: A mise and uv managed OpenUSD project
 
 python_version:
   type: str
@@ -36,7 +36,6 @@ python_version:
   choices:
     - "3.12"
     - "3.13"
-    - "3.14"
   default: "3.12"
 
 author_name:

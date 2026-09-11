@@ -5,9 +5,37 @@ uv = "latest"
 [settings]
 python.uv_venv_auto = "create|source"
 
+[env]
+_.path = ["./openusd/bin", "./openusd/lib"]
+PYTHONPATH = "{{ '{{' }} config_root {{ '}}' }}/openusd/lib/python"
+
 [tasks.setup]
-description = "Synchronize locked dependencies"
-run = "uv sync"
+description = "Install OpenUSD build tools and build OpenUSD into openusd/"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+uv sync
+uv tool install "git+ssh://git@github.com/lesliebinbin/OpenUSD.git" --force
+
+INSTALL_DIR="${MISE_PROJECT_ROOT:-$PWD}/openusd"
+
+if command -v build_usd &>/dev/null; then
+  BUILD_CMD="build_usd"
+  BUILD_FULL_CMD="build_usd_full"
+else
+  BUILD_CMD="uv tool run --from git+ssh://git@github.com/lesliebinbin/OpenUSD.git build_usd"
+  BUILD_FULL_CMD="uv tool run --from git+ssh://git@github.com/lesliebinbin/OpenUSD.git build_usd_full"
+fi
+
+if [[ "${1:-}" == "--full" ]]; then
+  echo "Building OpenUSD (full features) into ${INSTALL_DIR}..."
+  $BUILD_FULL_CMD "${INSTALL_DIR}"
+else
+  echo "Building OpenUSD (default features) into ${INSTALL_DIR}..."
+  $BUILD_CMD "${INSTALL_DIR}"
+fi
+"""
 
 [tasks.test]
 description = "Run the test suite"
