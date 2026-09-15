@@ -1,0 +1,5 @@
+copier copy \
+  --defaults \
+  --vcs-ref react/v0.0.1 \
+  git@github.com:lesliebinbin/mise-blueprints.git \
+  ./my-react-app
