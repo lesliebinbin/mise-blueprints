@@ -53,3 +53,10 @@ mise setup
 mise check
 #+end_src
 
+* Upstream template submodule
+
+The upstream repository is tracked as a Git submodule in =_template=
+(=https://github.com/cobanov/fly-connectome-template.git=). =template/= contains
+the standalone mise blueprint overlay rendered by Copier.
+
+
