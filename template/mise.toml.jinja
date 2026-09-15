@@ -1,0 +1,26 @@
+[tools]
+node = "{{ node_version }}"
+
+[tasks.setup]
+description = "Install application dependencies"
+run = "npm install"
+
+[tasks.dev]
+description = "Start the development server"
+run = "npm run dev"
+
+[tasks.build]
+description = "Build the application"
+run = "npm run build"
+
+[tasks."check:assets"]
+description = "Verify integrity of bundled anatomical data"
+run = "npm run check:assets"
+
+[tasks.test]
+description = "Run tests"
+run = "npm run test"
+
+[tasks.check]
+description = "Verify assets, run tests, and build"
+depends = ["check:assets", "test", "build"]
