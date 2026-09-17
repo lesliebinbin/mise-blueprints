@@ -1,0 +1,15 @@
+[tools]
+python = "{{ python_version }}"
+uv = "latest"
+
+[settings]
+python.uv_venv_auto = "create|source"
+
+[tasks.setup]
+description = "Clone upstream openusd"
+run = "git clone "git@github.com:lesliebinbin/OpenUSD.git .openusd"
+
+
+[tasks.build]
+description = "Build the application"
+run = "cd .openusd; uv sync; uv run build_usd ../.venv; cd ../; uv sync;"
