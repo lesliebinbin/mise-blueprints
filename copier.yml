@@ -2,25 +2,6 @@ _min_copier_version: "9.0.0"
 _subdirectory: template
 _answers_file: .copier-answers.yml
 
-project_name:
-  type: str
-  help: Human-readable application name
-  default: Fly Connectome Workbench
-
-project_slug:
-  type: str
-  help: Package and repository name
-  default: "{{ project_name | lower | replace(' ', '-') }}"
-  validator: >-
-    {% if not (project_slug | regex_search('^[a-z][a-z0-9-]*$')) %}
-    Use lowercase letters, digits, and hyphens; start with a letter.
-    {% endif %}
-
-description:
-  type: str
-  help: One-line application description
-  default: A browser workbench for fly connectome experiments
-
 node_version:
   type: str
   help: Node.js runtime managed by mise
@@ -28,4 +9,5 @@ node_version:
     - "22"
     - "24"
   default: "24"
+
 

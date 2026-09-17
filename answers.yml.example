@@ -1,5 +1,3 @@
-project_name: Fly Connectome Workbench
-project_slug: fly-connectome-workbench
-description: A browser workbench for fly connectome experiments
 node_version: "24"
+
 

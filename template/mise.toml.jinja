@@ -2,8 +2,23 @@
 node = "{{ node_version }}"
 
 [tasks.setup]
-description = "Install application dependencies"
-run = "npm install"
+description = "Clone upstream fly-connectome-template and install dependencies"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ ! -f "package.json" ]; then
+  echo "Fetching fly-connectome-template upstream repository..."
+  tmp_dir=$(mktemp -d)
+  git clone --depth 1 https://github.com/cobanov/fly-connectome-template.git "$tmp_dir"
+  rm -rf "$tmp_dir/.git" "$tmp_dir/.nvmrc"
+  cp -rn "$tmp_dir"/* . 2>/dev/null || cp -r "$tmp_dir"/* .
+  cp -rn "$tmp_dir"/.[!.]* . 2>/dev/null || true
+  rm -rf "$tmp_dir"
+fi
+
+npm install
+"""
 
 [tasks.dev]
 description = "Start the development server"
