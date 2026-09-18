@@ -8,10 +8,10 @@ python.uv_venv_auto = "create|source"
 [tasks.setup]
 description = "Clone upstream openusd"
 run = """
-git clone git@github.com:lesliebinbin/OpenUSD.git open-usd-temp
+git clone git@github.com:lesliebinbin/OpenUSD.git openusd-temp
 """
 
 
 [tasks.build]
 description = "Build the application"
-run = "cd .openusd; uv sync; uv run build_usd ../.openusd; cd ../; rm -rf open-usd-temp"
+run = "cd openusd-temp; uv sync; uv run build_usd ../.openusd; cd ../; rm -rf openusd-temp"
