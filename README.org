@@ -49,9 +49,21 @@ copier copy \
 #+begin_src shell
 cd my-openusd-project
 mise install
-# Build OpenUSD with default features:
 mise setup
-# Or build OpenUSD with all features:
-mise setup --full
+mise build
 mise check
+mise exec -- uv run python
 #+end_src
+
+In Python, enable the locally built bindings before importing USD:
+
+#+begin_src python
+import openusd
+from pxr import Usd
+#+end_src
+
+Run from the project directory so Python can find =openusd=. No =PYTHONPATH=
+setting is needed. Mise adds =openusd/bin= to =PATH= for command-line tools.
+The build copies =openusd-init.py= into =openusd/__init__.py= and retains the
+bootstrap source. It stops on failure and only removes =openusd-temp= after
+successful installation. To build again, run =mise setup= and =mise build=.

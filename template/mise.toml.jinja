@@ -12,7 +12,7 @@ python.uv_venv_auto = "create|source"
 description = "Clone upstream openusd"
 run = """
 set -eu
-git clone git@github.com:lesliebinbin/OpenUSD.git openusd-temp
+git clone git@github.com:lesliebinbin/OpenUSD.git openusd-source
 if [ ! -f pyproject.toml ]; then
     uv init --bare --python {{ python_version }} .
 fi
@@ -24,12 +24,11 @@ description = "Build OpenUSD and install the Python bootstrap"
 run = """
 set -eu
 (
-    cd openusd-temp
+    cd openusd-source
     uv sync --python {{ python_version }}
     uv run --python {{ python_version }} build_usd ../openusd
 )
-cp openusd-init.py openusd/__init__.py
-rm -rf openusd-temp
+cp openusd-init.py openusd/__init__.py;
 """
 
 [tasks.check]
