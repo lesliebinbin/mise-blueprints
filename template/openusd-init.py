@@ -5,6 +5,7 @@ from pathlib import Path
 
 _bindings = (
     Path(__file__).resolve().parent
+    / "build"
     / "lib"
     / f"python{sys.version_info.major}.{sys.version_info.minor}"
     / "site-packages"
