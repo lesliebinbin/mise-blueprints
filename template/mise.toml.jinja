@@ -4,6 +4,8 @@ uv = "latest"
 
 [env]
 _.path = ["{{ '{{config_root}}' }}/openusd/bin"]
+PYTHONPATH = "{{ '{{config_root}}' }}/openusd/lib/python{{ python_version }}/site-packages"
+QT_QPA_PLATFORM="xcb"
 
 [settings]
 python.uv_venv_auto = "create|source"
@@ -29,6 +31,7 @@ set -eu
     uv run --python {{ python_version }} build_usd ../openusd
 )
 cp openusd-init.py openusd/__init__.py;
+rm openusd-init.py;
 """
 
 [tasks.check]
