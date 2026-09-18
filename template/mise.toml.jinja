@@ -2,16 +2,36 @@
 python = "{{ python_version }}"
 uv = "latest"
 
+[env]
+_.path = ["{{ '{{config_root}}' }}/openusd/bin"]
+
 [settings]
 python.uv_venv_auto = "create|source"
 
 [tasks.setup]
 description = "Clone upstream openusd"
 run = """
+set -eu
 git clone git@github.com:lesliebinbin/OpenUSD.git openusd-temp
+if [ ! -f pyproject.toml ]; then
+    uv init --bare --python {{ python_version }} .
+fi
 """
 
 
 [tasks.build]
-description = "Build the application"
-run = "cd openusd-temp; uv sync; uv run build_usd ../.openusd; cd ../; rm -rf openusd-temp"
+description = "Build OpenUSD and install the Python bootstrap"
+run = """
+set -eu
+(
+    cd openusd-temp
+    uv sync --python {{ python_version }}
+    uv run --python {{ python_version }} build_usd ../openusd
+)
+cp openusd-init.py openusd/__init__.py
+rm -rf openusd-temp
+"""
+
+[tasks.check]
+description = "Check the OpenUSD Python bootstrap"
+run = "uv run --python {{ python_version }} python -E -c 'import openusd; from pxr import Usd; stage = Usd.Stage.CreateInMemory(); stage.DefinePrim(\"/World\"); assert stage.GetPrimAtPath(\"/World\"); print(Usd.GetVersion())'"
