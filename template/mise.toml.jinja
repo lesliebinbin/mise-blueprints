@@ -4,6 +4,7 @@ uv = "latest"
 
 [env]
 _.path = ["{{ '{{config_root}}' }}/openusd/build/bin"]
+PYTHONPATH = "{{ '{{config_root}}' }}/openusd/build/lib/python{{ python_version }}/site-packages"
 QT_QPA_PLATFORM="xcb"
 
 [settings]

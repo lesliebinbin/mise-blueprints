@@ -64,6 +64,7 @@ from pxr import Usd
 
 The build writes =openusd-bindings.pth= into the generated project's virtual
 environment, so Python, editors, and language servers using that environment
-can find =pxr= without =PYTHONPATH= or a bootstrap import. Mise also adds
-=openusd/build/bin= to =PATH= for command-line tools. To build again, run
-=mise setup= and =mise build=.
+can find =pxr= without a bootstrap import. Mise adds =openusd/build/bin= to
+=PATH= and sets =PYTHONPATH= for USD command-line launchers such as =usdview=,
+which run with the OpenUSD virtual environment's Python interpreter. To build
+again, run =mise setup= and =mise build=.
