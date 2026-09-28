@@ -4,7 +4,6 @@ uv = "latest"
 
 [env]
 _.path = ["{{ '{{config_root}}' }}/openusd/build/bin"]
-PYTHONPATH = "{{ '{{config_root}}' }}/openusd/build/lib/python{{ python_version }}/site-packages"
 QT_QPA_PLATFORM="xcb"
 
 [settings]
@@ -22,7 +21,7 @@ fi
 
 
 [tasks.build]
-description = "Build OpenUSD and install the Python bootstrap"
+description = "Build OpenUSD and expose its Python bindings"
 run = """
 set -eu
 (
@@ -30,10 +29,12 @@ set -eu
     uv sync --python {{ python_version }}
     uv run --python {{ python_version }} build_usd build
 )
-cp openusd-init.py openusd/__init__.py;
-rm openusd-init.py;
+bindings="$PWD/openusd/build/lib/python{{ python_version }}/site-packages"
+test -d "$bindings/pxr"
+site_packages="$(uv run --python {{ python_version }} python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
+printf '%s\n' "$bindings" > "$site_packages/openusd-bindings.pth"
 """
 
 [tasks.check]
-description = "Check the OpenUSD Python bootstrap"
-run = "uv run --python {{ python_version }} python -E -c 'import openusd; from pxr import Usd; stage = Usd.Stage.CreateInMemory(); stage.DefinePrim(\"/World\"); assert stage.GetPrimAtPath(\"/World\"); print(Usd.GetVersion())'"
+description = "Check the OpenUSD Python bindings"
+run = "uv run --python {{ python_version }} python -E -c 'from pxr import Usd; stage = Usd.Stage.CreateInMemory(); stage.DefinePrim(\"/World\"); assert stage.GetPrimAtPath(\"/World\"); print(Usd.GetVersion())'"

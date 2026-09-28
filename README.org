@@ -7,7 +7,7 @@ project.
 
 #+begin_src shell
 copier copy \
-  --vcs-ref uv-openusd/v0.0.1 \
+  --vcs-ref uv-openusd/v0.0.2 \
   git@github.com:lesliebinbin/mise-blueprints.git \
   ./my-openusd-project
 #+end_src
@@ -17,7 +17,7 @@ Use =--defaults= to accept every default answer non-interactively:
 #+begin_src shell
 copier copy \
   --defaults \
-  --vcs-ref uv-openusd/v0.0.1 \
+  --vcs-ref uv-openusd/v0.0.2 \
   git@github.com:lesliebinbin/mise-blueprints.git \
   ./my-openusd-project
 #+end_src
@@ -55,15 +55,15 @@ mise check
 mise exec -- uv run python
 #+end_src
 
-In Python, enable the locally built bindings before importing USD:
+The locally built bindings are available directly from the generated project's
+virtual environment:
 
 #+begin_src python
-import openusd
 from pxr import Usd
 #+end_src
 
-Run from the project directory so Python can find =openusd=. No =PYTHONPATH=
-setting is needed. Mise adds =openusd/bin= to =PATH= for command-line tools.
-The build copies =openusd-init.py= into =openusd/__init__.py= and retains the
-bootstrap source. It stops on failure and only removes =openusd-temp= after
-successful installation. To build again, run =mise setup= and =mise build=.
+The build writes =openusd-bindings.pth= into the generated project's virtual
+environment, so Python, editors, and language servers using that environment
+can find =pxr= without =PYTHONPATH= or a bootstrap import. Mise also adds
+=openusd/build/bin= to =PATH= for command-line tools. To build again, run
+=mise setup= and =mise build=.
