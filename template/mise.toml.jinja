@@ -2,6 +2,12 @@
 python = "{{ python_version }}"
 uv = "latest"
 
+[env]
+LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT="{{ config_root }}/data"
+LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
+SSRF_PROTECTION_ENABLED=false
+DATA_UPLOAD_MAX_MEMORY_SIZE=2147483648
+
 [settings]
 python.uv_venv_auto = "create|source"
 

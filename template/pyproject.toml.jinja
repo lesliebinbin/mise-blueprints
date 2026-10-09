@@ -9,7 +9,9 @@ description = "{{ description }}"
 readme = { file = "README.org", content-type = "text/plain" }
 requires-python = ">={{ python_version }}"
 authors = [{ name = "{{ author_name }}" }]
-dependencies = []
+dependencies = [
+  "label-studio"
+]
 
 [dependency-groups]
 dev = ["pytest>=8"]
